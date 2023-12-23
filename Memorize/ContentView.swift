@@ -7,12 +7,20 @@
 
 import SwiftUI
 
+let allEmojis: Array<Array<String>> = [
+    ["😀","😃","😄","😁","😆","😅","🤣","😂","🙂","🙃","😉","😊","😇","🥰","😍","🤩","😘"],
+    ["🐶", "🐱", "🐭", "🐹", "🐰", "🦊", "🐻", "🐼", "🦁", "🐯", "🦓", "🦒", "🦔", "🐾", "🐔", "🐸", "🦆"],
+    ["🍏", "🍎", "🍐", "🍊", "🍋", "🍌", "🍉", "🍇", "🍓", "🫐", "🍈", "🍒", "🍑", "🥭", "🍍", "🥥", "🥝"]
+]
+
 struct ContentView: View {
-    let emojis: Array<String> = ["😀","😃","😄","😁","😆","😅","🤣","😂","🙂","🙃","😉","😊","😇","🥰","😍","🤩","😘"]
-    @State var cardCount = 4
+    
+    @State var cardCount = 8 * 2
+    @State var themeIndex = 0
     
     var body: some View {
         VStack {
+            Text("Memorize!").font(.largeTitle)
             ScrollView {
                 cards
             }
@@ -20,12 +28,15 @@ struct ContentView: View {
             cardCountAdjusters
         }
         .padding()
+        .onAppear{
+            changeTheme(idx: 0)
+        }
     }
     
     var cards: some View {
-        LazyVGrid(columns: [GridItem(.adaptive(minimum: 120))]) {
+        LazyVGrid(columns: [GridItem(.adaptive(minimum: 80))]) {
             ForEach(0..<cardCount, id: \.self) { index in
-                CardView(content: emojis[index])
+                CardView(content: getEmojis()[index])
                     .aspectRatio(2/3, contentMode: .fit)
             }
         }
@@ -34,35 +45,46 @@ struct ContentView: View {
     
     var cardCountAdjusters: some View {
         HStack {
-            cardRemover
             Spacer()
-            cardAdder
+            themeAdjuster(idx: 0, theme: "😀")
+            themeAdjuster(idx: 1, theme: "🐶")
+            themeAdjuster(idx: 2, theme: "🍏")
+            Spacer()
         }
     }
     
-    func cardCountAdjuster(by offset: Int, symbol: String) -> some View {
-        Button(action: {
-            cardCount += offset
-        }, label: {
-            Image(systemName: symbol)
-        })
-        .imageScale(.large)
-        .font(.largeTitle)
-        .disabled(cardCount + offset < 1 || cardCount + offset > emojis.count)
+    func getEmojis()-> Array<String> {
+//        Since inside Card there is isFaceUp not changing content logic.
+//        Shuffle every runloop will cause unwilled repeat.
+        let x = allEmojis[themeIndex].prefix(8)
+        let ret = (x+x).shuffled()
+        print("\(ret)")
+        return ret
     }
     
-    var cardRemover: some View {
-        cardCountAdjuster(by: -1, symbol: "rectangle.stack.badge.minus.fill")
+    func changeTheme(idx: Int) {
+        themeIndex = idx
     }
     
-    var cardAdder: some View {
-        cardCountAdjuster(by: 1, symbol: "rectangle.stack.badge.plus.fill")
+    func themeAdjuster(idx: Int, theme: String) -> some View {
+        VStack {
+            Button(action: {
+                changeTheme(idx: idx)
+            }, label: {
+                Text(theme)
+            })
+            .imageScale(.large)
+            .font(.largeTitle)
+            .disabled(idx == themeIndex)
+            Text(idx.codingKey.stringValue).font(.body)
+        }
     }
 }
 
 struct CardView: View {
     let content: String
     @State var isFaceUp: Bool = false
+    @State var preContent: String = "0"
     
     var body: some View {
         ZStack {
@@ -70,13 +92,23 @@ struct CardView: View {
             Group {
                 base.fill(.white)
                 base.stroke(lineWidth: 2)
-                Text(content).font(.largeTitle)
+                Text(calulateContent()).font(.largeTitle)
             }
             .opacity(isFaceUp ? 1 : 0)
             base.fill().opacity(isFaceUp ? 0 : 1)
         }.onTapGesture {
             isFaceUp.toggle()
+            if(isFaceUp) {
+                preContent = content
+            }
         }
+    }
+    
+    func calulateContent() -> String {
+        if (!isFaceUp) {
+            return content
+        }
+        return preContent
     }
 }
 

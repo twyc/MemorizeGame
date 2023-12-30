@@ -1,5 +1,5 @@
 //
-//  ContentView.swift
+//  EmojiMemoryGameView.swift
 //  Memorize
 //
 //  Created by wangyichao on 2023/11/29.
@@ -7,15 +7,9 @@
 
 import SwiftUI
 
-let allEmojis: Array<Array<String>> = [
-    ["😀","😃","😄","😁","😆","😅","🤣","😂","🙂","🙃","😉","😊","😇","🥰","😍","🤩","😘"],
-    ["🐶", "🐱", "🐭", "🐹", "🐰", "🦊", "🐻", "🐼", "🦁", "🐯", "🦓", "🦒", "🦔", "🐾", "🐔", "🐸", "🦆"],
-    ["🍏", "🍎", "🍐", "🍊", "🍋", "🍌", "🍉", "🍇", "🍓", "🫐", "🍈", "🍒", "🍑", "🥭", "🍍", "🥥", "🥝"]
-]
-
-struct ContentView: View {
+struct EmojiMemoryGameView: View {
+    @ObservedObject var viewModel: EmojiMemoryGame
     
-    @State var cardCount = 8 * 2
     @State var themeIndex = 0
     
     var body: some View {
@@ -23,6 +17,9 @@ struct ContentView: View {
             Text("Memorize!").font(.largeTitle)
             ScrollView {
                 cards
+            }
+            Button("Shuffle") {
+                viewModel.shuffle()
             }
             Spacer()
             cardCountAdjusters
@@ -34,9 +31,9 @@ struct ContentView: View {
     }
     
     var cards: some View {
-        LazyVGrid(columns: [GridItem(.adaptive(minimum: 80))]) {
-            ForEach(0..<cardCount, id: \.self) { index in
-                CardView(content: getEmojis()[index])
+        LazyVGrid(columns: [GridItem(.adaptive(minimum: 85), spacing: 0)], spacing: 0) {
+            ForEach(viewModel.cards.indices, id: \.self) { index in
+                CardView(card: viewModel.cards[index])
                     .aspectRatio(2/3, contentMode: .fit)
             }
         }
@@ -51,15 +48,6 @@ struct ContentView: View {
             themeAdjuster(idx: 2, theme: "🍏")
             Spacer()
         }
-    }
-    
-    func getEmojis()-> Array<String> {
-//        Since inside Card there is isFaceUp not changing content logic.
-//        Shuffle every runloop will cause unwilled repeat.
-        let x = allEmojis[themeIndex].prefix(8)
-        let ret = (x+x).shuffled()
-        print("\(ret)")
-        return ret
     }
     
     func changeTheme(idx: Int) {
@@ -82,9 +70,7 @@ struct ContentView: View {
 }
 
 struct CardView: View {
-    let content: String
-    @State var isFaceUp: Bool = false
-    @State var preContent: String = "0"
+    var card: MemoryGame<String>.Card
     
     var body: some View {
         ZStack {
@@ -92,28 +78,19 @@ struct CardView: View {
             Group {
                 base.fill(.white)
                 base.stroke(lineWidth: 2)
-                Text(calulateContent()).font(.largeTitle)
+                Text(card.content)
+                    .font(.system(size: 200))
+                    .minimumScaleFactor(0.01)
+                    .aspectRatio(1, contentMode: .fit)
             }
-            .opacity(isFaceUp ? 1 : 0)
-            base.fill().opacity(isFaceUp ? 0 : 1)
-        }.onTapGesture {
-            isFaceUp.toggle()
-            if(isFaceUp) {
-                preContent = content
-            }
+            .opacity(card.isFaceUp ? 1 : 0)
+            base.fill().opacity(card.isFaceUp ? 0 : 1)
         }
-    }
-    
-    func calulateContent() -> String {
-        if (!isFaceUp) {
-            return content
-        }
-        return preContent
     }
 }
 
-struct ContentView_Previews: PreviewProvider {
+struct EmojiMemoryGameView_Previews: PreviewProvider {
     static var previews: some View {
-        ContentView()
+        EmojiMemoryGameView(viewModel: EmojiMemoryGame())
     }
 }

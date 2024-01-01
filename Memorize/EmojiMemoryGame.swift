@@ -8,19 +8,19 @@
 import Foundation
 
 class EmojiMemoryGame: ObservableObject {
-    private static let allEmojis: Array<Array<String>> = [
-        ["😀","😃","😄","😁","😆","😅","🤣","😂","🙂","🙃","😉","😊","😇","🥰","😍","🤩","😘"],
-        ["🐶", "🐱", "🐭", "🐹", "🐰", "🦊", "🐻", "🐼", "🦁", "🐯", "🦓", "🦒", "🦔", "🐾", "🐔", "🐸", "🦆"],
-        ["🍏", "🍎", "🍐", "🍊", "🍋", "🍌", "🍉", "🍇", "🍓", "🫐", "🍈", "🍒", "🍑", "🥭", "🍍", "🥥", "🥝"]
-    ]
-    
-    private static func createMemoryGame() -> MemoryGame<String> {
-        return MemoryGame(numberOfPairsOfCards: 8, cardContentFactory: { index in
-            if allEmojis[0].indices.contains(index) {
-                return allEmojis[0][index]
+    private static func getCardContentFactory(by theme: MemoryGame<String>.Theme) -> (Int) -> String {
+        let emojis = theme.emojis.shuffled()
+        return { index in
+            if emojis.indices.contains(index) {
+                return emojis[index]
             }
             return "⁇"
-        })
+        }
+    }
+    
+    private static func createMemoryGame() -> MemoryGame<String> {
+        let theme = AllThemes.randomTheme()
+        return MemoryGame(numberOfPairsOfCards: 8, cardContentFactory: getCardContentFactory(by: theme), theme: theme)
     }
     
     
@@ -28,6 +28,10 @@ class EmojiMemoryGame: ObservableObject {
     
     var cards: Array<MemoryGame<String>.Card> {
         return model.cards
+    }
+    
+    var theme: MemoryGame<String>.Theme {
+        return model.theme
     }
     
     // MARK: - Intents
@@ -38,5 +42,10 @@ class EmojiMemoryGame: ObservableObject {
     
     func choose(_ card: MemoryGame<String>.Card) {
         model.choose(card)
+    }
+    
+    func startGame() {
+        let theme = AllThemes.randomTheme()
+        model.startGame(numberOfPairsOfCards: 8, cardContentFactory: EmojiMemoryGame.getCardContentFactory(by: theme), theme: theme)
     }
 }

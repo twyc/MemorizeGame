@@ -14,21 +14,18 @@ struct EmojiMemoryGameView: View {
     
     var body: some View {
         VStack {
-            Text("Memorize!").font(.largeTitle)
+            Button(action: {
+                viewModel.startGame()
+            }, label: {
+                Text("Start Memorize!").font(.largeTitle)
+            })
             ScrollView {
                 cards
                     .animation(.default, value: viewModel.cards)
             }
-            Button("Shuffle") {
-                viewModel.shuffle()
-            }
-            Spacer()
-            cardCountAdjusters
+            themeNameLabel
         }
         .padding()
-        .onAppear{
-            changeTheme(idx: 0)
-        }
     }
     
     var cards: some View {
@@ -42,34 +39,14 @@ struct EmojiMemoryGameView: View {
                     }
             }
         }
-        .foregroundColor(.orange)
+        .foregroundColor(viewModel.theme.color)
     }
     
-    var cardCountAdjusters: some View {
+    var themeNameLabel: some View {
         HStack {
             Spacer()
-            themeAdjuster(idx: 0, theme: "😀")
-            themeAdjuster(idx: 1, theme: "🐶")
-            themeAdjuster(idx: 2, theme: "🍏")
+            Text(viewModel.theme.name).font(.largeTitle).foregroundColor(viewModel.theme.color)
             Spacer()
-        }
-    }
-    
-    func changeTheme(idx: Int) {
-        themeIndex = idx
-    }
-    
-    func themeAdjuster(idx: Int, theme: String) -> some View {
-        VStack {
-            Button(action: {
-                changeTheme(idx: idx)
-            }, label: {
-                Text(theme)
-            })
-            .imageScale(.large)
-            .font(.largeTitle)
-            .disabled(idx == themeIndex)
-            Text(idx.codingKey.stringValue).font(.body)
         }
     }
 }
